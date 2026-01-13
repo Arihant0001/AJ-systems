@@ -1,79 +1,70 @@
-# Tundler (Multi-tenant SaaS)
+# AJ Systems - Tiffin Management SaaS
 
-Web-only SaaS starter with strict owner-scoped data isolation.
+**Reliable daily tracking. Built right.**
 
-- Frontend: React (Vite) + Tailwind
-- Backend: FastAPI + JWT
-- DB: PostgreSQL
+AJ Systems is a production-ready SaaS application designed for Tiffin Service providers to manage their daily operations, customers, and monthly billing with ease.
 
-## Local dev
+![App Icon](frontend/public/pwa-192x192.png)
 
-### 1) Backend
+## Features
 
-- Copy `backend/.env.example` to `backend/.env`
-- Set `DATABASE_URL` to a running Postgres instance
+-   **Dashboard**: Monthly summaries, daily progress, and active customer counts.
+-   **Tiffin Management**: One-click "Give" and "Undo" for tiffins (Lunch/Dinner).
+-   **Customer Management**: Add, edit, and deactivate customers.
+-   **History & Billing**: View detailed monthly calendars and automated bill calculations.
+-   **Mobile-First Design**: Fully responsive PWA (Progressive Web App) that works on any device.
+-   **Secure**: JWT Authentication and secure Password Reset flow.
 
-Then:
+## Tech Stack
 
-```bash
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-alembic upgrade head
-uvicorn app.main:app --reload --port 8000
-```
+-   **Frontend**: React, TypeScript, Vite, Tailwind CSS
+-   **Backend**: Python, FastAPI, SQLAlchemy
+-   **Database**: PostgreSQL (Supabase)
+-   **Deployment**: Render (Backend) + Vercel (Frontend)
 
-### 2) Frontend
+## Local Development
 
-- Copy `frontend/.env.example` to `frontend/.env`
+### Prerequisites
 
-Then:
+-   Node.js & npm
+-   Python 3.11+
+-   PostgreSQL
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Setup
 
-## Deployment (Free tiers)
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/your-username/aj-systems.git
+    cd aj-systems
+    ```
 
-### Database (Neon/Supabase)
+2.  **Backend Setup**
+    ```bash
+    cd backend
+    python -m venv .venv
+    .\.venv\Scripts\activate
+    pip install -r requirements.txt
+    uvicorn app.main:app --reload
+    ```
 
-- Create a Postgres database
-- Copy the connection string into `DATABASE_URL`
+3.  **Frontend Setup**
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
 
-### Backend (Render/Railway)
+## Deployment
 
-Env vars:
-
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `JWT_ALGORITHM` (default `HS256`)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`
-- `CORS_ORIGINS` (e.g. `https://<vercel-app>.vercel.app`)
-
-Start command:
-
-- `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+### Backend (Render)
+-   **Build Command**: `pip install -r requirements.txt`
+-   **Start Command**: `gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:10000`
 
 ### Frontend (Vercel)
+-   **Framework**: Vite
+-   **Output Directory**: `dist`
+-   **Env Var**: `VITE_API_URL` pointing to the Render backend.
 
-Env vars:
+## License
 
-- `VITE_API_URL=https://<backend-domain>`
-
-Build:
-
-- `npm run build`
-
-Output:
-
-- `dist`
-
-## Security model
-
-- All protected endpoints require JWT
-- All records are owner-scoped by `owner_id`
-- Tiffin actions are append-only logs (GIVEN/REVERSED); totals are derived
-- PDF is generated dynamically and marked `no-store`
+© 2026 AJ Systems. Built by Arihant Jain.
