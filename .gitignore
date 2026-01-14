@@ -46,3 +46,38 @@ coverage/
 frontend/.turbo/
 frontend/dist/
 frontend/.cache/
+
+# Local development files (not needed for deployment)
+setup_dev_db.py
+start_localhost.bat
+start_localhost.ps1
+start_backend_only.bat
+verify_setup.bat
+fix_and_start.bat
+run_frontend.bat
+start_backend.bat
+test_password_reset.py
+
+# Extra documentation (keep only README.md)
+LOCALHOST_SETUP.md
+QUICK_START.md
+START_HERE.md
+RUN_INSTRUCTIONS.md
+FIX_REPORT.md
+SOLUTION_SUMMARY.md
+COMPLETE_FIX_CHECKLIST.md
+DOCUMENTATION_INDEX.md
+VISUAL_GUIDE.txt
+FINAL_REPORT.txt
+
+# SQLite database (local dev only)
+*.db
+tundler.db
+backend/*.db
+backend/tundler.db
+
+# Backend test/debug files
+backend/debug_env.py
+backend/diagnose_all.py
+backend/test_db.py
+backend/test_signup.py

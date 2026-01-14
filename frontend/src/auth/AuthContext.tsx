@@ -64,20 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(me)
       },
       signup: async (name, email, password) => {
-        await apiRequest('/auth/signup', {
+        const out = await apiRequest<{ access_token: string; token_type: string }>('/auth/signup', {
           method: 'POST',
           body: { name, email, password },
         })
-        await (async () => {
-          const out = await apiRequest<{ access_token: string; token_type: string }>('/auth/login', {
-            method: 'POST',
-            body: { email, password },
-          })
-          setToken(out.access_token)
-          setTokenState(out.access_token)
-          const me = await apiRequest<User>('/auth/me', { token: out.access_token })
-          setUser(me)
-        })()
+        setToken(out.access_token)
+        setTokenState(out.access_token)
+        const me = await apiRequest<User>('/auth/me', { token: out.access_token })
+        setUser(me)
       },
       logout: () => {
         clearToken()

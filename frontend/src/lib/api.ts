@@ -9,8 +9,7 @@ export class ApiError extends Error {
 }
 
 function getBaseUrl() {
-  const base = import.meta.env.VITE_API_URL
-  return base?.replace(/\/$/, '')
+  return import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:8000'
 }
 
 export async function apiRequest<T>(
