@@ -1,8 +1,7 @@
 import logging
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import json
+import urllib.request
+import urllib.error
 
 from app.core.config import settings
 
@@ -11,67 +10,73 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
     """
-    Production-ready email service using SMTP.
+    Production-ready email service using Brevo HTTP API.
     
-    Supports Brevo (Sendinblue) free tier:
-    - 300 emails/day free
-    - SMTP Server: smtp-relay.brevo.com
-    - Port: 587
-    - Get API Key: https://app.brevo.com/settings/keys/smtp
+    SMTP is blocked on many free hosting platforms (Render, Heroku, etc.)
+    so we use Brevo's HTTP API instead which works everywhere.
     
     Environment Variables Required:
-    - SMTP_HOST=smtp-relay.brevo.com
-    - SMTP_PORT=587
-    - SMTP_USER=apikey
-    - SMTP_PASSWORD=<your-brevo-api-key>
-    - FROM_EMAIL=no-reply@yourdomain.com
-    - FRONTEND_URL=https://your-frontend.vercel.app
+    - BREVO_API_KEY: Your Brevo API key (starts with 'xkeysib-')
+    - FROM_EMAIL: Sender email address
+    - FRONTEND_URL: Your frontend URL for reset links
     """
     
-    def _is_smtp_configured(self) -> bool:
-        """Check if SMTP credentials are configured"""
-        return bool(settings.smtp_user and settings.smtp_password)
+    def _get_api_key(self) -> str | None:
+        """Get Brevo API key from SMTP_PASSWORD or BREVO_API_KEY"""
+        # Try BREVO_API_KEY first, then fall back to SMTP_PASSWORD
+        api_key = getattr(settings, 'brevo_api_key', None) or settings.smtp_password
+        if api_key and (api_key.startswith('xkeysib-') or api_key.startswith('xsmtpsib-')):
+            return api_key
+        return None
     
-    def _send_email(self, to_email: str, subject: str, html_body: str, text_body: str) -> bool:
+    def _send_via_brevo_api(self, to_email: str, subject: str, html_body: str, text_body: str) -> bool:
         """
-        Send email via SMTP.
+        Send email via Brevo HTTP API.
         Returns True on success, False on failure.
         """
-        if not self._is_smtp_configured():
-            logger.warning("SMTP not configured, falling back to console output")
+        api_key = self._get_api_key()
+        if not api_key:
+            logger.warning("Brevo API key not configured")
             return False
         
         try:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{settings.from_name} <{settings.from_email}>"
-            msg['To'] = to_email
+            url = "https://api.brevo.com/v3/smtp/email"
             
-            # Attach both plain text and HTML versions
-            msg.attach(MIMEText(text_body, 'plain'))
-            msg.attach(MIMEText(html_body, 'html'))
+            payload = {
+                "sender": {
+                    "name": settings.from_name,
+                    "email": settings.from_email
+                },
+                "to": [{"email": to_email}],
+                "subject": subject,
+                "htmlContent": html_body,
+                "textContent": text_body
+            }
             
-            # Create secure connection
-            context = ssl.create_default_context()
+            data = json.dumps(payload).encode('utf-8')
             
-            with smtplib.SMTP(settings.smtp_host, settings.smtp_port) as server:
-                server.ehlo()
-                server.starttls(context=context)
-                server.ehlo()
-                server.login(settings.smtp_user, settings.smtp_password)
-                server.send_message(msg)
+            req = urllib.request.Request(url, data=data, method='POST')
+            req.add_header('Accept', 'application/json')
+            req.add_header('Content-Type', 'application/json')
+            req.add_header('api-key', api_key)
             
-            logger.info(f"Email sent successfully to {to_email}")
-            return True
-            
-        except smtplib.SMTPAuthenticationError as e:
-            logger.error(f"SMTP authentication failed: {e}")
+            with urllib.request.urlopen(req, timeout=30) as response:
+                if response.status in (200, 201):
+                    logger.info(f"Email sent successfully to {to_email} via Brevo API")
+                    return True
+                else:
+                    logger.error(f"Brevo API returned status {response.status}")
+                    return False
+                    
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8') if e.fp else 'No details'
+            logger.error(f"Brevo API HTTP error {e.code}: {error_body}")
             return False
-        except smtplib.SMTPException as e:
-            logger.error(f"SMTP error sending email: {e}")
+        except urllib.error.URLError as e:
+            logger.error(f"Brevo API URL error: {e.reason}")
             return False
         except Exception as e:
-            logger.error(f"Unexpected error sending email: {e}")
+            logger.error(f"Unexpected error sending email via Brevo API: {e}")
             return False
     
     def _log_to_console(self, to_email: str, subject: str, reset_link: str) -> None:
@@ -96,7 +101,8 @@ class EmailService:
     def send_password_reset_email(self, email: str, token: str) -> None:
         """
         Send password reset email with secure token link.
-        Falls back to console output if SMTP is not configured.
+        Uses Brevo HTTP API (works on all hosting platforms).
+        Falls back to console output if API key not configured.
         """
         reset_link = f"{settings.frontend_url}/reset-password?token={token}"
         subject = "Reset Your Password - AJ Systems"
@@ -116,7 +122,7 @@ If you didn't request this password reset, please ignore this email. Your passwo
 — AJ Systems Team
 """
         
-        # HTML version (clean, simple, works on all email clients)
+        # HTML version
         html_body = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -155,8 +161,8 @@ If you didn't request this password reset, please ignore this email. Your passwo
 </html>
 """
         
-        # Try to send via SMTP, fall back to console
-        if not self._send_email(email, subject, html_body, text_body):
+        # Try Brevo HTTP API first, fall back to console
+        if not self._send_via_brevo_api(email, subject, html_body, text_body):
             self._log_to_console(email, subject, reset_link)
         
         logger.info(f"Password reset email processed for {email}")

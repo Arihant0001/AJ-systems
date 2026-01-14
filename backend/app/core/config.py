@@ -13,11 +13,16 @@ class Settings(BaseSettings):
 
     cors_origins: str = "*"
 
-    # SMTP Configuration for Password Reset Emails (Brevo Free Tier)
+    # SMTP Configuration (kept for backward compatibility)
     smtp_host: str = "smtp-relay.brevo.com"
     smtp_port: int = 587
-    smtp_user: str = ""  # Set to "apikey" for Brevo
-    smtp_password: str = ""  # Your Brevo SMTP API key
+    smtp_user: str = ""
+    smtp_password: str = ""  # Can also be Brevo API key (xkeysib- or xsmtpsib-)
+    
+    # Brevo API key (preferred - works on all hosting platforms)
+    brevo_api_key: str = ""
+    
+    # Email settings
     from_email: str = "no-reply@ajsystems.app"
     from_name: str = "AJ Systems"
     
