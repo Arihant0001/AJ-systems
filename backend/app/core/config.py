@@ -13,5 +13,19 @@ class Settings(BaseSettings):
 
     cors_origins: str = "*"
 
+    # SMTP Configuration for Password Reset Emails (Brevo Free Tier)
+    smtp_host: str = "smtp-relay.brevo.com"
+    smtp_port: int = 587
+    smtp_user: str = ""  # Set to "apikey" for Brevo
+    smtp_password: str = ""  # Your Brevo SMTP API key
+    from_email: str = "no-reply@ajsystems.app"
+    from_name: str = "AJ Systems"
+    
+    # Frontend URL for reset links
+    frontend_url: str = "http://localhost:5173"
+    
+    # Password reset token expiry in minutes
+    reset_token_expire_minutes: int = 30
+
 
 settings = Settings()  # type: ignore[call-arg]
