@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7
 
-    cors_origins: str = ""
+    cors_origins: str = "*"
 
 
 settings = Settings()  # type: ignore[call-arg]
