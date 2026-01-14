@@ -16,7 +16,7 @@ class EmailService:
     def _get_api_key(self) -> str | None:
         """Get Brevo API key"""
         api_key = settings.brevo_api_key or settings.smtp_password
-        logger.info(f"API key configured: {bool(api_key)}, starts with: {api_key[:10] if api_key else 'None'}...")
+        print(f"🔑 API key configured: {bool(api_key)}, starts with: {api_key[:10] if api_key else 'None'}...")
         return api_key if api_key else None
     
     def _send_via_brevo_api(self, to_email: str, subject: str, html_body: str, text_body: str) -> bool:
@@ -26,7 +26,7 @@ class EmailService:
         """
         api_key = self._get_api_key()
         if not api_key:
-            logger.error("Brevo API key not configured!")
+            print("❌ Brevo API key not configured!")
             return False
         
         try:
@@ -43,7 +43,7 @@ class EmailService:
                 "textContent": text_body
             }
             
-            logger.info(f"Sending email to {to_email} from {settings.from_email}")
+            print(f"📧 Sending email to {to_email} from {settings.from_email}")
             
             data = json.dumps(payload).encode('utf-8')
             
@@ -54,23 +54,23 @@ class EmailService:
             
             with urllib.request.urlopen(req, timeout=30) as response:
                 response_body = response.read().decode('utf-8')
-                logger.info(f"Brevo API response: {response.status} - {response_body}")
+                print(f"Brevo API response: {response.status} - {response_body}")
                 if response.status in (200, 201):
-                    logger.info(f"✅ Email sent successfully to {to_email} via Brevo API")
+                    print(f"✅ Email sent successfully to {to_email} via Brevo API")
                     return True
                 else:
-                    logger.error(f"Brevo API returned status {response.status}")
+                    print(f"❌ Brevo API returned status {response.status}")
                     return False
                     
         except urllib.error.HTTPError as e:
             error_body = e.read().decode('utf-8') if e.fp else 'No details'
-            logger.error(f"❌ Brevo API HTTP error {e.code}: {error_body}")
+            print(f"❌ Brevo API HTTP error {e.code}: {error_body}")
             return False
         except urllib.error.URLError as e:
-            logger.error(f"❌ Brevo API URL error: {e.reason}")
+            print(f"❌ Brevo API URL error: {e.reason}")
             return False
         except Exception as e:
-            logger.error(f"❌ Unexpected error sending email via Brevo API: {e}")
+            print(f"❌ Unexpected error sending email via Brevo API: {e}")
             return False
     
     def _log_to_console(self, to_email: str, subject: str, reset_link: str) -> None:
@@ -120,12 +120,12 @@ If you didn't request this, ignore this email.
 </body>
 </html>"""
         
-        logger.info(f"=== Starting password reset email to {email} ===")
+        print(f"=== Starting password reset email to {email} ===")
         
         if self._send_via_brevo_api(email, subject, html_body, text_body):
-            logger.info(f"=== Email sent successfully ===")
+            print(f"=== Email sent successfully ===")
         else:
-            logger.warning(f"=== Email sending failed, showing in console ===")
+            print(f"=== Email sending failed, showing in console ===")
             self._log_to_console(email, subject, reset_link)
 
 
